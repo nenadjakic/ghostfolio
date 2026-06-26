@@ -73,4 +73,24 @@ export class UpdateOrderDto {
   @IsNumber()
   @Min(0)
   unitPrice: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  grossAmount?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  netAmount?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  withholdingTax?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  withholdingPct?: number;
 }

@@ -134,31 +134,42 @@ model MarketData {
 }
 
 model Order {
-  account         Account?      @relation(fields: [accountId, accountUserId], references: [id, userId])
+  account         Account?        @relation(fields: [accountId, accountUserId], references: [id, userId])
   accountId       String?
   accountUserId   String?
   comment         String?
-  createdAt       DateTime      @default(now())
+  createdAt       DateTime        @default(now())
   currency        String?
   date            DateTime
   fee             Float
-  id              String        @id @default(uuid())
-  isDraft         Boolean       @default(false)
+  id              String          @id @default(uuid())
+  isDraft         Boolean         @default(false)
   quantity        Float
   symbolProfileId String
   tags            Tag[]
   type            Type
   unitPrice       Float
-  updatedAt       DateTime      @updatedAt
-  user            User          @relation(fields: [userId], onDelete: Cascade, references: [id])
+  updatedAt       DateTime        @updatedAt
+  user            User            @relation(fields: [userId], onDelete: Cascade, references: [id])
   userId          String
-  SymbolProfile   SymbolProfile @relation(fields: [symbolProfileId], references: [id])
+  SymbolProfile   SymbolProfile   @relation(fields: [symbolProfileId], references: [id])
+  dividendDetail  DividendDetail?
 
   @@index([accountId])
   @@index([date])
   @@index([isDraft])
   @@index([type])
   @@index([userId])
+}
+
+model DividendDetail {
+  id             String @id @default(uuid())
+  grossAmount    Float?
+  netAmount      Float?
+  withholdingTax Float?
+  withholdingPct Float?
+  order          Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId        String @unique
 }
 
 model Platform {
