@@ -9,10 +9,11 @@ import {
 } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatRadioModule } from '@angular/material/radio';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatRadioModule, ReactiveFormsModule],
+  imports: [MatRadioModule, MatTooltipModule, ReactiveFormsModule],
   selector: 'gf-toggle',
   styleUrls: ['./toggle.component.scss'],
   templateUrl: './toggle.component.html'

@@ -11,12 +11,15 @@ import {
   AssetProfileIdentifier,
   LineChartItem,
   PortfolioPerformance,
+  ToggleOption,
   User
 } from '@ghostfolio/common/interfaces';
 import { hasPermission, permissions } from '@ghostfolio/common/permissions';
 import { internalRoutes } from '@ghostfolio/common/routes/routes';
+import { DateRange } from '@ghostfolio/common/types';
 import { GfLineChartComponent } from '@ghostfolio/ui/line-chart';
 import { DataService } from '@ghostfolio/ui/services';
+import { GfToggleComponent } from '@ghostfolio/ui/toggle';
 
 import {
   ChangeDetectionStrategy,
@@ -37,6 +40,7 @@ import { DeviceDetectorService } from 'ngx-device-detector';
   imports: [
     GfLineChartComponent,
     GfPortfolioPerformanceComponent,
+    GfToggleComponent,
     MatButtonModule,
     RouterModule
   ],
@@ -45,6 +49,38 @@ import { DeviceDetectorService } from 'ngx-device-detector';
   templateUrl: './home-overview.html'
 })
 export class GfHomeOverviewComponent implements OnInit {
+  protected readonly dateRangeOptions: ToggleOption[] = [
+    {
+      label: 'MAX',
+      tooltip: $localize`Maximum period`,
+      value: 'max'
+    },
+    {
+      label: 'YTD',
+      tooltip: $localize`Year to date`,
+      value: 'ytd'
+    },
+    {
+      label: 'MTD',
+      tooltip: $localize`Month to date`,
+      value: 'mtd'
+    },
+    {
+      label: 'WTD',
+      tooltip: $localize`Week to date`,
+      value: 'wtd'
+    },
+    {
+      label: '1Y',
+      tooltip: '1 ' + $localize`year`,
+      value: '1y'
+    },
+    {
+      label: '5Y',
+      tooltip: '5 ' + $localize`years`,
+      value: '5y'
+    }
+  ];
   protected readonly errors = signal<AssetProfileIdentifier[]>([]);
   protected readonly hasImpersonationId = signal(false);
   protected readonly historicalDataItems = signal<LineChartItem[] | null>(null);
@@ -52,6 +88,7 @@ export class GfHomeOverviewComponent implements OnInit {
   protected readonly performance = signal<PortfolioPerformance | null>(null);
   protected readonly performanceLabel = $localize`Performance`;
   protected readonly precision = signal(2);
+  protected readonly selectedDateRange = signal<DateRange>('max');
   protected readonly user = signal<User | null>(null);
 
   protected readonly routerLinkAccounts = internalRoutes.accounts.routerLink;
@@ -116,13 +153,18 @@ export class GfHomeOverviewComponent implements OnInit {
       });
   }
 
+  protected onDateRangeChange(dateRange: DateRange) {
+    this.selectedDateRange.set(dateRange);
+    this.update();
+  }
+
   private update() {
     this.historicalDataItems.set(null);
     this.isLoadingPerformance.set(true);
 
     this.dataService
       .fetchPortfolioPerformance({
-        range: this.user()?.settings?.dateRange ?? DEFAULT_DATE_RANGE
+        range: this.selectedDateRange() ?? DEFAULT_DATE_RANGE
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(({ chart, errors, performance }) => {

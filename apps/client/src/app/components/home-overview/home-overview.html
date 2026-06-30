@@ -63,6 +63,17 @@
   } @else {
     <div class="row w-100">
       <div class="col p-0">
+        <div
+          class="align-items-center d-flex justify-content-center mb-2 range-toggle-container"
+        >
+          <gf-toggle
+            class="performance-range-toggle"
+            [defaultValue]="selectedDateRange()"
+            [isLoading]="isLoadingPerformance()"
+            [options]="dateRangeOptions"
+            (valueChange)="onDateRangeChange($event.value)"
+          />
+        </div>
         <div class="chart-container mx-auto position-relative">
           <gf-line-chart
             class="position-absolute"
@@ -71,7 +82,7 @@
             [colorScheme]="user()?.settings?.colorScheme"
             [hidden]="historicalDataItems()?.length === 0"
             [historicalDataItems]="historicalDataItems()"
-            [isAnimated]="user()?.settings?.dateRange === '1d' ? false : true"
+            [isAnimated]="selectedDateRange() === '1d' ? false : true"
             [label]="performanceLabel"
             [locale]="user()?.settings?.locale"
             [showGradient]="true"

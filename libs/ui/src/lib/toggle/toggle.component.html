@@ -12,6 +12,7 @@
           !isLoading() && option.value !== optionFormControl.value
       }"
       [disabled]="isLoading()"
+      [matTooltip]="option.tooltip || ''"
       [value]="option.value"
       >{{ option.label }}</mat-radio-button
     >
