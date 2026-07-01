@@ -9,6 +9,7 @@ import {
 } from '@ghostfolio/common/config';
 import {
   AssetProfileIdentifier,
+  Filter,
   LineChartItem,
   PortfolioPerformance,
   ToggleOption,
@@ -32,6 +33,8 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { RouterModule } from '@angular/router';
 import { DeviceDetectorService } from 'ngx-device-detector';
 
@@ -42,6 +45,8 @@ import { DeviceDetectorService } from 'ngx-device-detector';
     GfPortfolioPerformanceComponent,
     GfToggleComponent,
     MatButtonModule,
+    MatFormFieldModule,
+    MatSelectModule,
     RouterModule
   ],
   selector: 'gf-home-overview',
@@ -88,6 +93,7 @@ export class GfHomeOverviewComponent implements OnInit {
   protected readonly performance = signal<PortfolioPerformance | null>(null);
   protected readonly performanceLabel = $localize`Performance`;
   protected readonly precision = signal(2);
+  protected readonly selectedAccountIds = signal<string[]>([]);
   protected readonly selectedDateRange = signal<DateRange>('max');
   protected readonly user = signal<User | null>(null);
 
@@ -116,6 +122,25 @@ export class GfHomeOverviewComponent implements OnInit {
     return this.showDetails()
       ? (this.user()?.settings?.baseCurrency ?? DEFAULT_CURRENCY)
       : '%';
+  });
+
+  protected readonly selectedAccountsLabel = computed(() => {
+    const selectedAccountIds = this.selectedAccountIds();
+    const accounts = this.user()?.accounts ?? [];
+
+    if (selectedAccountIds.length === 0) {
+      return $localize`All accounts`;
+    }
+
+    if (selectedAccountIds.length === 1) {
+      return (
+        accounts.find(({ id }) => {
+          return id === selectedAccountIds[0];
+        })?.name ?? selectedAccountIds[0]
+      );
+    }
+
+    return `${selectedAccountIds.length} ${$localize`accounts selected`}`;
   });
 
   private readonly dataService = inject(DataService);
@@ -158,12 +183,25 @@ export class GfHomeOverviewComponent implements OnInit {
     this.update();
   }
 
+  protected onSelectedAccountsChange(accountIds: string[]) {
+    this.selectedAccountIds.set(accountIds ?? []);
+    this.update();
+  }
+
   private update() {
     this.historicalDataItems.set(null);
     this.isLoadingPerformance.set(true);
 
+    const filters: Filter[] = this.selectedAccountIds().map((id) => {
+      return {
+        id,
+        type: 'ACCOUNT'
+      };
+    });
+
     this.dataService
       .fetchPortfolioPerformance({
+        filters,
         range: this.selectedDateRange() ?? DEFAULT_DATE_RANGE
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
