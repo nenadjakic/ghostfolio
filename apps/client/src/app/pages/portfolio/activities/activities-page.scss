@@ -1,3 +1,139 @@
 :host {
   display: block;
 }
+
+.active-filters {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.active-filters-list {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.active-filter-chip {
+  align-items: center;
+  background: transparent;
+  border: 1px solid
+    color-mix(in srgb, var(--mat-sys-primary) 26%, var(--mat-sys-outline));
+  border-radius: 999px;
+  color: color-mix(
+    in srgb,
+    var(--mat-sys-on-surface) 90%,
+    var(--mat-sys-primary)
+  );
+  display: inline-flex;
+  gap: 0.45rem;
+  font-size: 0.75rem;
+  line-height: 1;
+  padding: 0.45rem 0.45rem 0.45rem 0.7rem;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.active-filter-chip-label {
+  color: color-mix(in srgb, var(--mat-sys-on-surface) 68%, transparent);
+  font-weight: 500;
+}
+
+.active-filter-chip-value {
+  color: inherit;
+  font-weight: 700;
+}
+
+.active-filter-chip:hover {
+  background: transparent;
+  border-color: color-mix(
+    in srgb,
+    var(--mat-sys-primary) 40%,
+    var(--mat-sys-outline)
+  );
+}
+
+.active-filter-chip-close {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: color-mix(in srgb, var(--mat-sys-on-surface) 58%, transparent);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.95rem;
+  height: 1.15rem;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  width: 1.15rem;
+}
+
+.active-filter-chip-close:hover {
+  color: color-mix(
+    in srgb,
+    var(--mat-sys-on-surface) 88%,
+    var(--mat-sys-primary)
+  );
+}
+
+.filters-drawer-container {
+  background: transparent;
+  height: 100vh;
+  inset: 0;
+  pointer-events: none;
+  position: fixed;
+  visibility: hidden;
+  z-index: 1100;
+}
+
+.filters-drawer-container.is-open {
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.filters-drawer {
+  max-width: 24rem;
+  padding: 1rem;
+  width: min(92vw, 24rem);
+}
+
+.filter-close-button {
+  align-items: center;
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  min-height: 2rem;
+  min-width: 2rem;
+  padding: 0;
+  width: 2rem;
+
+  ion-icon {
+    align-items: center;
+    display: inline-flex;
+    font-size: 1.2rem;
+    height: 1.2rem;
+    justify-content: center;
+    line-height: 1;
+    margin: 0;
+    padding: 0;
+    transform: translateY(-0.01em);
+    vertical-align: middle;
+    width: 1.2rem;
+  }
+}
+
+::ng-deep .filters-drawer .mat-drawer-inner-container {
+  padding: 0;
+}
+
+@media (max-width: 575px) {
+  .active-filters {
+    flex-direction: column;
+  }
+
+  .filters-drawer {
+    width: 100vw;
+  }
+}

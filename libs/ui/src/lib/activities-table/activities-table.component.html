@@ -19,6 +19,17 @@
 
   @if (hasPermissionToCreateActivity) {
     <div class="d-flex">
+      @if (showFilterButton) {
+        <button
+          class="align-items-center d-flex mr-1"
+          mat-stroked-button
+          (click)="onOpenFilter()"
+        >
+          <ion-icon class="mr-2" name="funnel-outline" />
+          <span i18n>Filter</span>
+        </button>
+      }
+
       <button
         class="align-items-center d-flex"
         mat-stroked-button
