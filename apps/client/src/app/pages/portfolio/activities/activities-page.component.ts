@@ -6,6 +6,7 @@ import { downloadAsFile } from '@ghostfolio/common/helper';
 import {
   Activity,
   AssetProfileIdentifier,
+  LookupItem,
   User
 } from '@ghostfolio/common/interfaces';
 import { hasPermission, permissions } from '@ghostfolio/common/permissions';
@@ -16,6 +17,7 @@ import { GfEntityLogoComponent } from '@ghostfolio/ui/entity-logo';
 import { GfFabComponent } from '@ghostfolio/ui/fab';
 import { translate } from '@ghostfolio/ui/i18n';
 import { DataService } from '@ghostfolio/ui/services';
+import { GfSymbolAutocompleteComponent } from '@ghostfolio/ui/symbol-autocomplete';
 
 import {
   ChangeDetectionStrategy,
@@ -31,7 +33,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -63,10 +64,10 @@ interface ActiveFilterChip {
     GfActivitiesTableComponent,
     GfEntityLogoComponent,
     GfFabComponent,
+    GfSymbolAutocompleteComponent,
     MatButtonModule,
     MatFormFieldModule,
     MatIconModule,
-    MatInputModule,
     IonIcon,
     MatSelectModule,
     MatSidenavModule,
@@ -114,12 +115,12 @@ export class GfActivitiesPageComponent implements OnInit {
   protected drawerFiltersForm = this.formBuilder.nonNullable.group({
     accounts: this.formBuilder.nonNullable.control<string[]>([]),
     activityTypes: this.formBuilder.nonNullable.control<ActivityType[]>([]),
-    symbol: this.formBuilder.nonNullable.control('')
+    symbol: this.formBuilder.control<LookupItem | null>(null)
   });
   protected filtersForm = this.formBuilder.nonNullable.group({
     accounts: this.formBuilder.nonNullable.control<string[]>([]),
     activityTypes: this.formBuilder.nonNullable.control<ActivityType[]>([]),
-    symbol: this.formBuilder.nonNullable.control('')
+    symbol: this.formBuilder.control<LookupItem | null>(null)
   });
 
   public constructor() {
@@ -161,7 +162,7 @@ export class GfActivitiesPageComponent implements OnInit {
     return (
       accounts.length +
       activityTypes.length +
-      (symbol.trim().length > 0 ? 1 : 0)
+      (symbol?.dataSource && symbol.symbol ? 1 : 0)
     );
   }
 
@@ -182,7 +183,7 @@ export class GfActivitiesPageComponent implements OnInit {
 
     if (accountNames.length > 0) {
       chips.push({
-        label: 'Accounts',
+        label: $localize`Accounts`,
         tooltip: accountNames.join(', '),
         type: 'ACCOUNT',
         value:
@@ -192,7 +193,7 @@ export class GfActivitiesPageComponent implements OnInit {
 
     if (translatedActivityTypes.length > 0) {
       chips.push({
-        label: 'Type',
+        label: $localize`Type`,
         tooltip: translatedActivityTypes.join(', '),
         type: 'TYPE',
         value:
@@ -202,12 +203,14 @@ export class GfActivitiesPageComponent implements OnInit {
       });
     }
 
-    if (symbol.trim()) {
+    if (symbol?.dataSource && symbol.symbol) {
       chips.push({
-        label: 'Asset',
-        tooltip: symbol.trim().toUpperCase(),
+        label: $localize`Asset`,
+        tooltip: symbol.name
+          ? `${symbol.name} (${symbol.dataSource})`
+          : symbol.dataSource,
         type: 'SYMBOL',
-        value: symbol.trim().toUpperCase()
+        value: symbol.symbol
       });
     }
 
@@ -232,7 +235,7 @@ export class GfActivitiesPageComponent implements OnInit {
     this.drawerFiltersForm.patchValue({
       accounts: [],
       activityTypes: [],
-      symbol: ''
+      symbol: null
     });
   }
 
@@ -399,7 +402,7 @@ export class GfActivitiesPageComponent implements OnInit {
     } else if (chip.type === 'TYPE') {
       this.filtersForm.controls.activityTypes.setValue([]);
     } else {
-      this.filtersForm.controls.symbol.setValue('');
+      this.filtersForm.controls.symbol.setValue(null);
     }
 
     this.syncDrawerFiltersWithActiveFilters();
@@ -461,12 +464,14 @@ export class GfActivitiesPageComponent implements OnInit {
 
   private getSelectedFilters() {
     const { accounts, symbol } = this.filtersForm.getRawValue();
-    const symbolFilter = symbol.trim().toUpperCase();
+    const assetProfile =
+      symbol?.dataSource && symbol.symbol
+        ? { dataSource: symbol.dataSource, symbol: symbol.symbol }
+        : null;
     const baseFilters = this.userService.getFilters().filter(({ type }) => {
       return (
         type !== 'ACCOUNT' &&
-        type !== 'SYMBOL' &&
-        !(symbolFilter && type === 'DATA_SOURCE')
+        (!assetProfile || (type !== 'DATA_SOURCE' && type !== 'SYMBOL'))
       );
     });
 
@@ -475,14 +480,14 @@ export class GfActivitiesPageComponent implements OnInit {
       ...accounts.map((id) => {
         return { id, type: 'ACCOUNT' as const };
       }),
-      ...(symbolFilter
+      ...(assetProfile
         ? [
             {
-              id: 'YAHOO',
+              id: assetProfile.dataSource,
               type: 'DATA_SOURCE' as const
             },
             {
-              id: symbolFilter,
+              id: assetProfile.symbol,
               type: 'SYMBOL' as const
             }
           ]
@@ -510,6 +515,13 @@ export class GfActivitiesPageComponent implements OnInit {
     if (!this.hasInitializedFilters) {
       const existingFilters = this.userService.getFilters();
 
+      const existingDataSource = existingFilters.find(({ type }) => {
+        return type === 'DATA_SOURCE';
+      })?.id;
+      const existingSymbol = existingFilters.find(({ type }) => {
+        return type === 'SYMBOL';
+      })?.id;
+
       this.filtersForm.patchValue(
         {
           accounts: existingFilters
@@ -520,16 +532,21 @@ export class GfActivitiesPageComponent implements OnInit {
               return id;
             }),
           symbol:
-            existingFilters.find(({ type }) => {
-              return type === 'SYMBOL';
-            })?.id ?? ''
+            existingDataSource && existingSymbol
+              ? ({
+                  currency: '',
+                  dataProviderInfo: { isPremium: false },
+                  dataSource: existingDataSource,
+                  name: existingSymbol,
+                  symbol: existingSymbol
+                } as LookupItem)
+              : null
         },
         { emitEvent: false }
       );
 
       this.syncDrawerFiltersWithActiveFilters();
 
-      this.isFilterFormOpen = this.activeFilterCount > 0;
       this.hasInitializedFilters = true;
     }
 

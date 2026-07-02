@@ -143,6 +143,8 @@ export class GfHomeOverviewComponent implements OnInit {
     return `${selectedAccountIds.length} ${$localize`accounts selected`}`;
   });
 
+  private hasInitializedDateRange = false;
+
   private readonly dataService = inject(DataService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly deviceDetectorService = inject(DeviceDetectorService);
@@ -158,6 +160,14 @@ export class GfHomeOverviewComponent implements OnInit {
       .subscribe((state) => {
         if (state?.user) {
           this.user.set(state.user);
+
+          if (!this.hasInitializedDateRange) {
+            this.selectedDateRange.set(
+              state.user.settings?.dateRange ?? DEFAULT_DATE_RANGE
+            );
+            this.hasInitializedDateRange = true;
+          }
+
           this.update();
         }
       });

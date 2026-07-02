@@ -14,7 +14,6 @@
 
     .range-toggle-container {
       margin-left: auto;
-      overflow-x: auto;
     }
 
     @media (max-width: 575.98px) {
@@ -33,22 +32,6 @@
 
   .range-toggle-container {
     overflow-x: auto;
-
-    .performance-range-toggle {
-      cursor: pointer;
-
-      ::ng-deep .mat-mdc-radio-button {
-        cursor: pointer;
-      }
-
-      ::ng-deep .mat-mdc-radio-button label {
-        cursor: pointer;
-      }
-
-      ::ng-deep .mat-mdc-radio-button.cursor-pointer:hover {
-        background-color: rgba(var(--dark-dividers), 0.6);
-      }
-    }
   }
 
   .chart-container {
@@ -81,15 +64,5 @@
 
   .introduction {
     max-width: 50rem;
-  }
-}
-
-:host-context(.theme-dark) {
-  .range-toggle-container {
-    .performance-range-toggle {
-      ::ng-deep .mat-mdc-radio-button.cursor-pointer:hover {
-        background-color: rgba(var(--light-dividers), 0.6);
-      }
-    }
   }
 }
