@@ -1,3 +1,4 @@
+import { getAccountLabel } from './account.util';
 import { jsonValidator, validateObjectForForm } from './form.util';
 
-export { jsonValidator, validateObjectForForm };
+export { getAccountLabel, jsonValidator, validateObjectForForm };

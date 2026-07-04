@@ -76,7 +76,9 @@
                 selectedAccountsLabel()
               }}</mat-select-trigger>
               @for (account of user()?.accounts; track account.id) {
-                <mat-option [value]="account.id">{{ account.name }}</mat-option>
+                <mat-option [value]="account.id">
+                  {{ getAccountLabel(account) }}
+                </mat-option>
               }
             </mat-select>
           </mat-form-field>

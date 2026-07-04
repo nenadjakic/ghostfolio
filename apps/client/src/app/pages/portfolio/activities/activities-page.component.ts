@@ -12,8 +12,8 @@ import {
 import { hasPermission, permissions } from '@ghostfolio/common/permissions';
 import { internalRoutes } from '@ghostfolio/common/routes/routes';
 import { DateRange } from '@ghostfolio/common/types';
+import { getAccountLabel } from '@ghostfolio/common/utils';
 import { GfActivitiesTableComponent } from '@ghostfolio/ui/activities-table';
-import { GfEntityLogoComponent } from '@ghostfolio/ui/entity-logo';
 import { GfFabComponent } from '@ghostfolio/ui/fab';
 import { translate } from '@ghostfolio/ui/i18n';
 import { DataService } from '@ghostfolio/ui/services';
@@ -62,7 +62,6 @@ interface ActiveFilterChip {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     GfActivitiesTableComponent,
-    GfEntityLogoComponent,
     GfFabComponent,
     GfSymbolAutocompleteComponent,
     MatButtonModule,
@@ -85,6 +84,7 @@ export class GfActivitiesPageComponent implements OnInit {
   protected activityTypesTranslationMap = new Map<ActivityType, string>();
   protected dataSource: MatTableDataSource<Activity> | undefined;
   protected deviceType: string;
+  protected getAccountLabel = getAccountLabel;
   protected hasImpersonationId: boolean;
   protected hasPermissionToCreateActivity: boolean;
   protected hasPermissionToDeleteActivity: boolean;
@@ -169,8 +169,8 @@ export class GfActivitiesPageComponent implements OnInit {
   protected get activeFilterChips(): ActiveFilterChip[] {
     const { accounts, activityTypes, symbol } = this.filtersForm.getRawValue();
     const accountMap = new Map(
-      (this.user?.accounts ?? []).map(({ id, name }) => {
-        return [id, name] as const;
+      (this.user?.accounts ?? []).map((account) => {
+        return [account.id, getAccountLabel(account)] as const;
       })
     );
     const accountNames = accounts.map((accountId) => {

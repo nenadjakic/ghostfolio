@@ -18,6 +18,7 @@ import {
 import { hasPermission, permissions } from '@ghostfolio/common/permissions';
 import { internalRoutes } from '@ghostfolio/common/routes/routes';
 import { DateRange } from '@ghostfolio/common/types';
+import { getAccountLabel } from '@ghostfolio/common/utils';
 import { GfLineChartComponent } from '@ghostfolio/ui/line-chart';
 import { DataService } from '@ghostfolio/ui/services';
 import { GfToggleComponent } from '@ghostfolio/ui/toggle';
@@ -91,6 +92,7 @@ export class GfHomeOverviewComponent implements OnInit {
   protected readonly historicalDataItems = signal<LineChartItem[] | null>(null);
   protected readonly isLoadingPerformance = signal(true);
   protected readonly performance = signal<PortfolioPerformance | null>(null);
+  protected readonly getAccountLabel = getAccountLabel;
   protected readonly performanceLabel = $localize`Performance`;
   protected readonly precision = signal(2);
   protected readonly selectedAccountIds = signal<string[]>([]);
@@ -133,10 +135,13 @@ export class GfHomeOverviewComponent implements OnInit {
     }
 
     if (selectedAccountIds.length === 1) {
+      const account = accounts.find(({ id }) => {
+        return id === selectedAccountIds[0];
+      });
+
       return (
-        accounts.find(({ id }) => {
-          return id === selectedAccountIds[0];
-        })?.name ?? selectedAccountIds[0]
+        (account ? getAccountLabel(account) : undefined) ??
+        selectedAccountIds[0]
       );
     }
 

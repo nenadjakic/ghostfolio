@@ -109,16 +109,7 @@
             <mat-select formControlName="accounts" multiple>
               @for (account of user?.accounts ?? []; track account.id) {
                 <mat-option [value]="account.id">
-                  <div class="d-flex">
-                    @if (account.platform?.url) {
-                      <gf-entity-logo
-                        class="mr-1"
-                        [tooltip]="account.platform?.name"
-                        [url]="account.platform?.url"
-                      />
-                    }
-                    <span>{{ account.name }}</span>
-                  </div>
+                  {{ getAccountLabel(account) }}
                 </mat-option>
               }
             </mat-select>
