@@ -34,6 +34,23 @@ export class ImportActivitiesService {
     'value'
   ];
 
+  private static GROSS_AMOUNT_KEYS = ['grossamount', 'gross_amount', 'gross'];
+  private static NET_AMOUNT_KEYS = ['netamount', 'net_amount', 'net'];
+  private static WITHHOLDING_TAX_KEYS = [
+    'withholdingtax',
+    'withholding_tax',
+    'wht',
+    'withholding'
+  ];
+  private static WITHHOLDING_PCT_KEYS = [
+    'withholdingpct',
+    'withholding_pct',
+    'withholdingpercent',
+    'withholding_percent',
+    'whtpercent',
+    'wht_pct'
+  ];
+
   private readonly http = inject(HttpClient);
 
   public async importCsv({
@@ -74,6 +91,10 @@ export class ImportActivitiesService {
         fee: this.parseFee({ content, index, item }),
         quantity: this.parseQuantity({ content, index, item }),
         unitPrice: this.parseUnitPrice({ content, index, item }),
+        grossAmount: this.parseGrossAmount({ item }),
+        netAmount: this.parseNetAmount({ item }),
+        withholdingTax: this.parseWithholdingTax({ item }),
+        withholdingPct: this.parseWithholdingPct({ item }),
         updateAccountBalance: false
       });
 
@@ -168,6 +189,7 @@ export class ImportActivitiesService {
     comment,
     currency,
     date,
+    dividendDetail,
     fee,
     quantity,
     SymbolProfile,
@@ -187,10 +209,14 @@ export class ImportActivitiesService {
       currency: currency ?? SymbolProfile.currency ?? '',
       dataSource: SymbolProfile.dataSource,
       date: date.toString(),
+      grossAmount: dividendDetail?.grossAmount,
+      netAmount: dividendDetail?.netAmount,
       symbol: SymbolProfile.symbol,
       tags: tags?.map(({ id }) => {
         return id;
-      })
+      }),
+      withholdingTax: dividendDetail?.withholdingTax,
+      withholdingPct: dividendDetail?.withholdingPct
     };
   }
 
@@ -450,6 +476,62 @@ export class ImportActivitiesService {
       activities: content,
       message: `activities.${index}.unitPrice is not valid`
     };
+  }
+
+  private parseGrossAmount({ item }: { item: Record<string, unknown> }) {
+    item = this.lowercaseKeys(item);
+
+    for (const key of ImportActivitiesService.GROSS_AMOUNT_KEYS) {
+      const value = item[key];
+
+      if (isNumber(value) && isFinite(value)) {
+        return Math.abs(value);
+      }
+    }
+
+    return undefined;
+  }
+
+  private parseNetAmount({ item }: { item: Record<string, unknown> }) {
+    item = this.lowercaseKeys(item);
+
+    for (const key of ImportActivitiesService.NET_AMOUNT_KEYS) {
+      const value = item[key];
+
+      if (isNumber(value) && isFinite(value)) {
+        return Math.abs(value);
+      }
+    }
+
+    return undefined;
+  }
+
+  private parseWithholdingTax({ item }: { item: Record<string, unknown> }) {
+    item = this.lowercaseKeys(item);
+
+    for (const key of ImportActivitiesService.WITHHOLDING_TAX_KEYS) {
+      const value = item[key];
+
+      if (isNumber(value) && isFinite(value)) {
+        return Math.abs(value);
+      }
+    }
+
+    return undefined;
+  }
+
+  private parseWithholdingPct({ item }: { item: Record<string, unknown> }) {
+    item = this.lowercaseKeys(item);
+
+    for (const key of ImportActivitiesService.WITHHOLDING_PCT_KEYS) {
+      const value = item[key];
+
+      if (isNumber(value) && isFinite(value)) {
+        return Math.abs(value);
+      }
+    }
+
+    return undefined;
   }
 
   private postImport(

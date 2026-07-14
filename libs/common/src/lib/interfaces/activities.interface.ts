@@ -1,10 +1,11 @@
 import { EnhancedSymbolProfile } from '@ghostfolio/common/interfaces';
 import { AccountWithPlatform } from '@ghostfolio/common/types';
 
-import { Order, Tag } from '@prisma/client';
+import { DividendDetail, Order, Tag } from '@prisma/client';
 
 export interface Activity extends Order {
   account?: AccountWithPlatform;
+  dividendDetail?: DividendDetail | null;
   error?: ActivityError;
   feeInAssetProfileCurrency: number;
   feeInBaseCurrency: number;

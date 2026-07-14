@@ -4,6 +4,7 @@ import { IsCurrencyCode } from '@ghostfolio/common/validators/is-currency-code';
 import { AssetClass, AssetSubClass, DataSource, Type } from '@prisma/client';
 import { Transform, TransformFnParams } from 'class-transformer';
 import {
+  Max,
   IsArray,
   IsBoolean,
   IsEnum,
@@ -72,6 +73,27 @@ export class CreateOrderDto {
   @IsNumber()
   @Min(0)
   unitPrice: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  grossAmount?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  netAmount?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  withholdingTax?: number;
+
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  @IsOptional()
+  withholdingPct?: number;
 
   @IsBoolean()
   @IsOptional()

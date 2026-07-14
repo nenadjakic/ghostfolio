@@ -255,7 +255,7 @@ export class ActivitiesService {
           connect: tags
         }
       },
-      include: { SymbolProfile: true }
+      include: { SymbolProfile: true, dividendDetail: true }
     });
 
     if (updateAccountBalance === true) {

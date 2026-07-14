@@ -28,13 +28,20 @@ import {
 } from '@ghostfolio/common/types';
 
 import { Injectable } from '@nestjs/common';
-import { DataSource, Prisma } from '@prisma/client';
+import { DataSource, Prisma, Type } from '@prisma/client';
 import { Big } from 'big.js';
 import { endOfToday, isAfter, isSameSecond, parseISO } from 'date-fns';
 import { omit, uniqBy } from 'lodash';
 import { randomUUID } from 'node:crypto';
 
 import { ImportDataDto } from './import-data.dto';
+
+type ImportActivity = Partial<Activity> & {
+  grossAmount?: number;
+  netAmount?: number;
+  withholdingTax?: number;
+  withholdingPct?: number;
+};
 
 @Injectable()
 export class ImportService {
@@ -467,6 +474,16 @@ export class ImportService {
       const tagIds = activity.tagIds ?? [];
       const type = activity.type;
       const unitPrice = activity.unitPrice;
+      const grossAmount = activity.grossAmount;
+      const netAmount = activity.netAmount;
+      const withholdingTax = activity.withholdingTax;
+      const withholdingPct = activity.withholdingPct;
+      const hasDividendDetail =
+        type === Type.DIVIDEND &&
+        (grossAmount !== undefined ||
+          netAmount !== undefined ||
+          withholdingTax !== undefined ||
+          withholdingPct !== undefined);
 
       const assetProfile = assetProfiles[
         getAssetProfileIdentifier({
@@ -516,6 +533,8 @@ export class ImportService {
           });
 
       if (isDryRun) {
+        const orderId = randomUUID();
+
         order = {
           comment,
           currency,
@@ -528,8 +547,20 @@ export class ImportService {
           accountId: validatedAccount?.id,
           accountUserId: undefined,
           createdAt: new Date(),
-          id: randomUUID(),
+          id: orderId,
           isDraft: isAfter(date, endOfToday()),
+          ...(hasDividendDetail
+            ? {
+                dividendDetail: {
+                  id: randomUUID(),
+                  orderId,
+                  grossAmount,
+                  netAmount,
+                  withholdingTax,
+                  withholdingPct
+                }
+              }
+            : {}),
           SymbolProfile: {
             assetClass,
             assetSubClass,
@@ -593,6 +624,18 @@ export class ImportService {
               }
             }
           },
+          ...(hasDividendDetail
+            ? {
+                dividendDetail: {
+                  create: {
+                    grossAmount,
+                    netAmount,
+                    withholdingTax,
+                    withholdingPct
+                  }
+                }
+              }
+            : {}),
           tags: validatedTags.map(({ id }) => {
             return { id };
           }),
@@ -663,7 +706,7 @@ export class ImportService {
     activitiesDto: Partial<CreateOrderDto>[];
     userCurrency: string;
     userId: string;
-  }): Promise<Partial<Activity>[]> {
+  }): Promise<ImportActivity[]> {
     const { activities: existingActivities } =
       await this.activitiesService.getActivities({
         userCurrency,
@@ -684,10 +727,21 @@ export class ImportService {
         symbol,
         tags,
         type,
-        unitPrice
+        unitPrice,
+        grossAmount,
+        netAmount,
+        withholdingTax,
+        withholdingPct
       }) => {
         const date = parseISO(dateString);
         const isDuplicate = existingActivities.some((activity) => {
+          const hasMatchingDividendDetail =
+            type !== Type.DIVIDEND ||
+            (activity.dividendDetail?.grossAmount === grossAmount &&
+              activity.dividendDetail?.netAmount === netAmount &&
+              activity.dividendDetail?.withholdingTax === withholdingTax &&
+              activity.dividendDetail?.withholdingPct === withholdingPct);
+
           return (
             activity.accountId === accountId &&
             activity.comment === comment &&
@@ -699,7 +753,8 @@ export class ImportService {
             activity.quantity === quantity &&
             activity.SymbolProfile.symbol === symbol &&
             activity.type === type &&
-            activity.unitPrice === unitPrice
+            activity.unitPrice === unitPrice &&
+            hasMatchingDividendDetail
           );
         });
 
@@ -717,6 +772,10 @@ export class ImportService {
           quantity,
           type,
           unitPrice,
+          grossAmount,
+          netAmount,
+          withholdingTax,
+          withholdingPct,
           SymbolProfile: {
             dataSource,
             symbol,
