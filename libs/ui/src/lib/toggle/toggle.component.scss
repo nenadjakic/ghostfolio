@@ -9,6 +9,10 @@
       background-color: rgba(var(--dark-dividers));
     }
 
+    &.cursor-pointer:hover {
+      background-color: rgba(var(--dark-dividers), 0.6);
+    }
+
     ::ng-deep {
       .mdc-radio {
         display: none;
@@ -29,6 +33,10 @@
     &.mat-mdc-radio-checked {
       background-color: rgba(var(--light-dividers));
       border: 1px solid rgba(var(--light-disabled-text));
+    }
+
+    &.cursor-pointer:hover {
+      background-color: rgba(var(--light-dividers), 0.6);
     }
 
     ::ng-deep {

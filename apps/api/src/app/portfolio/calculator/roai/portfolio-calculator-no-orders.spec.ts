@@ -9,6 +9,7 @@ import { ExchangeRateDataService } from '@ghostfolio/api/services/exchange-rate-
 import { PortfolioSnapshotService } from '@ghostfolio/api/services/queues/portfolio-snapshot/portfolio-snapshot.service';
 import { PortfolioSnapshotServiceMock } from '@ghostfolio/api/services/queues/portfolio-snapshot/portfolio-snapshot.service.mock';
 import { parseDate } from '@ghostfolio/common/helper';
+import { Filter } from '@ghostfolio/common/interfaces';
 import { PerformanceCalculationType } from '@ghostfolio/common/types/performance-calculation-type.type';
 
 import { Big } from 'big.js';
@@ -49,6 +50,9 @@ describe('PortfolioCalculator', () => {
   let redisCacheService: RedisCacheService;
 
   beforeEach(() => {
+    RedisCacheServiceMock.cache.clear();
+    PortfolioSnapshotServiceMock.jobsStore.clear();
+
     configurationService = new ConfigurationService();
 
     currentRateService = new CurrentRateService(null, null, null, null);
@@ -71,6 +75,106 @@ describe('PortfolioCalculator', () => {
       portfolioSnapshotService,
       redisCacheService
     );
+  });
+
+  const cacheExpiredPortfolioSnapshot = (filters: Filter[]) => {
+    RedisCacheServiceMock.cache.set(
+      RedisCacheServiceMock.getPortfolioSnapshotKey({
+        calculationType: PerformanceCalculationType.ROAI,
+        filters,
+        userCurrency: 'CHF',
+        userId: userDummyData.id
+      }),
+      JSON.stringify({
+        expiration: 0,
+        portfolioSnapshot: {}
+      })
+    );
+  };
+
+  describe('portfolio snapshot job ids', () => {
+    it('uses different job ids for different filters of the same user', async () => {
+      const accountFilter = [{ id: 'account-1', type: 'ACCOUNT' }] as Filter[];
+      const tagFilter = [{ id: 'tag-1', type: 'TAG' }] as Filter[];
+
+      cacheExpiredPortfolioSnapshot(accountFilter);
+
+      const accountPortfolioCalculator =
+        portfolioCalculatorFactory.createCalculator({
+          activities: [],
+          calculationType: PerformanceCalculationType.ROAI,
+          currency: 'CHF',
+          filters: accountFilter,
+          userId: userDummyData.id
+        });
+
+      await accountPortfolioCalculator.getSnapshot();
+
+      const accountJobIds = [...PortfolioSnapshotServiceMock.jobsStore.keys()];
+
+      PortfolioSnapshotServiceMock.jobsStore.clear();
+
+      cacheExpiredPortfolioSnapshot(tagFilter);
+
+      const tagPortfolioCalculator =
+        portfolioCalculatorFactory.createCalculator({
+          activities: [],
+          calculationType: PerformanceCalculationType.ROAI,
+          currency: 'CHF',
+          filters: tagFilter,
+          userId: userDummyData.id
+        });
+
+      await tagPortfolioCalculator.getSnapshot();
+
+      const tagJobIds = [...PortfolioSnapshotServiceMock.jobsStore.keys()];
+
+      expect(accountJobIds).toHaveLength(1);
+      expect(tagJobIds).toHaveLength(1);
+      expect(accountJobIds[0]).not.toBe(tagJobIds[0]);
+    });
+
+    it('uses the same job id for equivalent filters in a different order', async () => {
+      const filters = [
+        { id: 'tag-1', type: 'TAG' },
+        { id: 'account-1', type: 'ACCOUNT' }
+      ] as Filter[];
+
+      cacheExpiredPortfolioSnapshot(filters);
+
+      const portfolioCalculator = portfolioCalculatorFactory.createCalculator({
+        activities: [],
+        calculationType: PerformanceCalculationType.ROAI,
+        currency: 'CHF',
+        filters,
+        userId: userDummyData.id
+      });
+
+      await portfolioCalculator.getSnapshot();
+
+      const jobIds = [...PortfolioSnapshotServiceMock.jobsStore.keys()];
+
+      PortfolioSnapshotServiceMock.jobsStore.clear();
+
+      cacheExpiredPortfolioSnapshot([...filters].reverse());
+
+      const reversedPortfolioCalculator =
+        portfolioCalculatorFactory.createCalculator({
+          activities: [],
+          calculationType: PerformanceCalculationType.ROAI,
+          currency: 'CHF',
+          filters: [...filters].reverse(),
+          userId: userDummyData.id
+        });
+
+      await reversedPortfolioCalculator.getSnapshot();
+
+      const reversedJobIds = [...PortfolioSnapshotServiceMock.jobsStore.keys()];
+
+      expect(jobIds).toHaveLength(1);
+      expect(reversedJobIds).toHaveLength(1);
+      expect(jobIds[0]).toBe(reversedJobIds[0]);
+    });
   });
 
   describe('get current positions', () => {

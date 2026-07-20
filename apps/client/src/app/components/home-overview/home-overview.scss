@@ -2,6 +2,38 @@
   display: block;
   height: 100%;
 
+  .chart-controls {
+    gap: 0.75rem;
+    max-width: 50rem;
+
+    .account-select {
+      margin-bottom: 0;
+      min-width: 12rem;
+      width: 18rem;
+    }
+
+    .range-toggle-container {
+      margin-left: auto;
+    }
+
+    @media (max-width: 575.98px) {
+      align-items: stretch !important;
+      flex-direction: column;
+
+      .account-select {
+        width: 100%;
+      }
+
+      .range-toggle-container {
+        margin-left: 0;
+      }
+    }
+  }
+
+  .range-toggle-container {
+    overflow-x: auto;
+  }
+
   .chart-container {
     aspect-ratio: 16 / 9;
     height: auto;

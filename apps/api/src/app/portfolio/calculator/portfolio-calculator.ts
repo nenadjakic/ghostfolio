@@ -1095,15 +1095,20 @@ export abstract class PortfolioCalculator {
 
     let cachedPortfolioSnapshot: PortfolioSnapshot;
     let isCachedPortfolioSnapshotExpired = false;
-    const jobId = this.userId;
+    const calculationType = this.getPerformanceCalculationType();
+    const portfolioSnapshotKey = this.redisCacheService.getPortfolioSnapshotKey(
+      {
+        calculationType,
+        filters: this.filters,
+        userCurrency: this.currency,
+        userId: this.userId
+      }
+    );
+    const jobId = portfolioSnapshotKey;
 
     try {
-      const cachedPortfolioSnapshotValue = await this.redisCacheService.get(
-        this.redisCacheService.getPortfolioSnapshotKey({
-          filters: this.filters,
-          userId: this.userId
-        })
-      );
+      const cachedPortfolioSnapshotValue =
+        await this.redisCacheService.get(portfolioSnapshotKey);
 
       const { expiration, portfolioSnapshot }: PortfolioSnapshotValue =
         JSON.parse(cachedPortfolioSnapshotValue);
@@ -1132,7 +1137,7 @@ export abstract class PortfolioCalculator {
         // Compute in the background
         this.portfolioSnapshotService.addJobToQueue({
           data: {
-            calculationType: this.getPerformanceCalculationType(),
+            calculationType,
             filters: this.filters,
             userCurrency: this.currency,
             userId: this.userId
@@ -1149,7 +1154,7 @@ export abstract class PortfolioCalculator {
       // Wait for computation
       await this.portfolioSnapshotService.addJobToQueue({
         data: {
-          calculationType: this.getPerformanceCalculationType(),
+          calculationType,
           filters: this.filters,
           userCurrency: this.currency,
           userId: this.userId

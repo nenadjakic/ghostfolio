@@ -63,6 +63,36 @@
   } @else {
     <div class="row w-100">
       <div class="col p-0">
+        <div class="chart-controls align-items-center d-flex mx-auto mb-2">
+          <mat-form-field appearance="outline" class="account-select">
+            <mat-label i18n>Accounts</mat-label>
+            <mat-select
+              multiple
+              [disabled]="isLoadingPerformance()"
+              [value]="selectedAccountIds()"
+              (valueChange)="onSelectedAccountsChange($event)"
+            >
+              <mat-select-trigger>{{
+                selectedAccountsLabel()
+              }}</mat-select-trigger>
+              @for (account of user()?.accounts; track account.id) {
+                <mat-option [value]="account.id">
+                  {{ getAccountLabel(account) }}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <div class="range-toggle-container">
+            <gf-toggle
+              class="performance-range-toggle"
+              [defaultValue]="selectedDateRange()"
+              [isLoading]="isLoadingPerformance()"
+              [options]="dateRangeOptions"
+              (valueChange)="onDateRangeChange($event.value)"
+            />
+          </div>
+        </div>
         <div class="chart-container mx-auto position-relative">
           <gf-line-chart
             class="position-absolute"
@@ -71,7 +101,7 @@
             [colorScheme]="user()?.settings?.colorScheme"
             [hidden]="historicalDataItems()?.length === 0"
             [historicalDataItems]="historicalDataItems()"
-            [isAnimated]="user()?.settings?.dateRange === '1d' ? false : true"
+            [isAnimated]="selectedDateRange() === '1d' ? false : true"
             [label]="performanceLabel"
             [locale]="user()?.settings?.locale"
             [showGradient]="true"

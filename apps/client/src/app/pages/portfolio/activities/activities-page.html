@@ -2,6 +2,33 @@
   <div class="row">
     <div class="col">
       <h1 class="d-none d-sm-block h3 mb-3 text-center" i18n>Activities</h1>
+
+      @if (activeFilterCount > 0) {
+        <div class="active-filters mb-3">
+          <div class="active-filters-list">
+            @for (chip of activeFilterChips; track chip.type) {
+              <span
+                class="active-filter-chip"
+                [attr.title]="chip.tooltip ?? null"
+                [matTooltip]="chip.tooltip ?? ''"
+              >
+                <span class="active-filter-chip-label">{{ chip.label }}:</span>
+                <strong class="active-filter-chip-value">{{
+                  chip.value
+                }}</strong>
+                <button
+                  class="active-filter-chip-close"
+                  type="button"
+                  (click)="onRemoveActiveFilterChip(chip)"
+                >
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </span>
+            }
+          </div>
+        </div>
+      }
+
       <gf-activities-table
         [baseCurrency]="user?.settings?.baseCurrency"
         [dataSource]="dataSource"
@@ -10,7 +37,7 @@
         [hasPermissionToCreateActivity]="hasPermissionToCreateActivity"
         [hasPermissionToDeleteActivity]="hasPermissionToDeleteActivity"
         [hasPermissionToExportActivities]="!hasImpersonationId"
-        [hasPermissionToFilterByType]="user?.settings?.isExperimentalFeatures"
+        [hasPermissionToFilterByType]="false"
         [locale]="user?.settings?.locale"
         [pageIndex]="pageIndex"
         [pageSize]="pageSize"
@@ -19,6 +46,7 @@
           hasPermissionToDeleteActivity &&
           !user.settings.isRestrictedView
         "
+        [showFilterButton]="true"
         [sortColumn]="sortColumn"
         [sortDirection]="sortDirection"
         [totalItems]="totalItems"
@@ -27,11 +55,11 @@
         (activityDeleted)="onDeleteActivity($event)"
         (export)="onExport()"
         (exportDrafts)="onExportDrafts($event)"
+        (filterButtonClicked)="onOpenFilterDrawer()"
         (import)="onImport()"
         (importDividends)="onImportDividends()"
         (pageChanged)="onChangePage($event)"
         (sortChanged)="onSortChanged($event)"
-        (typesFilterChanged)="onTypesFilterChanged($event)"
       />
     </div>
   </div>
@@ -48,6 +76,82 @@
       "
     />
   }
+
+  <mat-drawer-container
+    class="filters-drawer-container"
+    [class.is-open]="isFilterFormOpen"
+    [hasBackdrop]="true"
+  >
+    <mat-drawer
+      class="filters-drawer"
+      mode="over"
+      position="end"
+      [opened]="isFilterFormOpen"
+      (closedStart)="isFilterFormOpen = false"
+    >
+      <div class="align-items-center d-flex justify-content-between mb-3">
+        <h2 class="h5 m-0" i18n>Filters</h2>
+        <button
+          aria-label="Close filters"
+          class="filter-close-button"
+          mat-icon-button
+          type="button"
+          (click)="onCloseFilterDrawer()"
+        >
+          <ion-icon aria-hidden="true" name="close-outline" />
+        </button>
+      </div>
+
+      <form [formGroup]="drawerFiltersForm" (ngSubmit)="onApplyFilters()">
+        <div class="mb-3">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label i18n>Account</mat-label>
+            <mat-select formControlName="accounts" multiple>
+              @for (account of user?.accounts ?? []; track account.id) {
+                <mat-option [value]="account.id">
+                  {{ getAccountLabel(account) }}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="mb-3">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label i18n>Type</mat-label>
+            <mat-select formControlName="activityTypes" multiple>
+              @for (activityType of activityTypes; track activityType) {
+                <mat-option [value]="activityType">
+                  {{ activityTypesTranslationMap.get(activityType) }}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="mb-3">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label i18n>Asset</mat-label>
+            <gf-symbol-autocomplete formControlName="symbol" />
+          </mat-form-field>
+        </div>
+
+        <div class="d-flex justify-content-end mt-2">
+          <button
+            class="mr-2"
+            mat-stroked-button
+            type="button"
+            (click)="onClearDrawerFilters()"
+          >
+            <span i18n>Reset</span>
+          </button>
+          <button color="primary" mat-flat-button type="submit">
+            <span i18n>Filter</span>
+          </button>
+        </div>
+      </form>
+    </mat-drawer>
+  </mat-drawer-container>
 </div>
 
 <router-outlet />

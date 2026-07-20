@@ -65,6 +65,7 @@ import {
   documentTextOutline,
   ellipsisHorizontal,
   ellipsisVertical,
+  funnelOutline,
   tabletLandscapeOutline,
   trashOutline
 } from 'ionicons/icons';
@@ -115,6 +116,7 @@ export class GfActivitiesTableComponent implements AfterViewInit, OnInit {
   @Input() pageIndex: number;
   @Input() pageSize = DEFAULT_PAGE_SIZE;
   @Input() showActions = true;
+  @Input() showFilterButton = false;
   @Input() sortColumn: string;
   @Input() sortDirection: SortDirection;
   @Input() sortDisabled = false;
@@ -125,6 +127,7 @@ export class GfActivitiesTableComponent implements AfterViewInit, OnInit {
   @Output() activityDeleted = new EventEmitter<string>();
   @Output() export = new EventEmitter<void>();
   @Output() exportDrafts = new EventEmitter<string[]>();
+  @Output() filterButtonClicked = new EventEmitter<void>();
   @Output() import = new EventEmitter<void>();
   @Output() importDividends = new EventEmitter<AssetProfileIdentifier>();
   @Output() pageChanged = new EventEmitter<PageEvent>();
@@ -233,6 +236,7 @@ export class GfActivitiesTableComponent implements AfterViewInit, OnInit {
       documentTextOutline,
       ellipsisHorizontal,
       ellipsisVertical,
+      funnelOutline,
       tabletLandscapeOutline,
       trashOutline
     });
@@ -346,6 +350,10 @@ export class GfActivitiesTableComponent implements AfterViewInit, OnInit {
           return activity.id;
         })
     );
+  }
+
+  public onOpenFilter() {
+    this.filterButtonClicked.emit();
   }
 
   public onImport() {
